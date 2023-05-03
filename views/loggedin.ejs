@@ -1,3 +1,7 @@
 <%- include("templates/header") %> 
-    You are logged in!
+    <div class="container">
+        <h1 class ="m-5">Hello, <%= username %>! </h1>
+        <button type="button" class="btn btn-sm btn-dark" onclick="window.location.href='/members'">Go to members area</button>
+        <button type="button" class="btn btn-sm btn-danger" onclick="window.location.href='/logout'">Log Out</button>
+    </div>
 <%- include("templates/footer") %> 

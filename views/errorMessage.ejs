@@ -1,6 +1,12 @@
 <%- include("templates/header") %>
-    <div class="container">
-        <h1 style='color:red'>Error!</h1>
-        <%= error %>
-    </div>
-    <%- include("templates/footer") %>
+<div class="container">
+  <h1 style="color: red">Error!</h1>
+  <p><%= error %> </p>
+  <%if (error =="Invalid email/password combination."){
+  %>
+  <a href="/login">Try again</a>
+  <% } else { %>
+  <a href="/createUser">Try again</a>
+  <% } %>
+</div>
+<%- include("templates/footer") %>

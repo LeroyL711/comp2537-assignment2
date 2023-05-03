@@ -77,7 +77,7 @@ function isAdmin(req) {
 function adminAuthorization(req, res, next) {
     if (!isAdmin(req)) {
         res.status(403);
-        res.render("errorMessage", {error: "Not Authorized"});
+        res.render("errorMessage", {error: "Not authorized"});
         return;
     }
     else {
@@ -86,7 +86,11 @@ function adminAuthorization(req, res, next) {
 }
 
 app.get('/', (req,res) => {
+	if (!req.session.authenticated){
     res.render("index");
+	} else {
+	res.render("loggedin", {username: `${req.session.username}`});
+	}
 });
 
 app.get('/nosql-injection', async (req,res) => {
@@ -131,7 +135,7 @@ app.get('/login', (req,res) => {
 
 app.post('/submitUser', async (req,res) => {
     var username = req.body.username;
-		var email = req.body.email;
+	var email = req.body.email;
     var password = req.body.password;
 
 	const schema = Joi.object(
@@ -159,57 +163,57 @@ app.post('/submitUser', async (req,res) => {
 });
 
 app.post('/loggingin', async (req,res) => {
-    var username = req.body.username;
+    var email = req.body.email;
     var password = req.body.password;
 
 	const schema = Joi.string().max(20).required();
-	const validationResult = schema.validate(username);
+	const validationResult = schema.validate(email);
 	if (validationResult.error != null) {
 	   console.log(validationResult.error);
 	   res.redirect("/login");
 	   return;
 	}
 
-	const result = await userCollection.find({username: username}).project({username: 1, password: 1, user_type: 1, _id: 1}).toArray();
+	const result = await userCollection.find({email: email}).project({username: 1, email: 1, password: 1, user_type: 1, _id: 1}).toArray();
 
 	console.log(result);
 	if (result.length != 1) {
 		console.log("user not found");
-		res.redirect("/login");
+		res.render("errorMessage", {error: "Invalid email/password combination."});
 		return;
 	}
 	if (await bcrypt.compare(password, result[0].password)) {
 		console.log("correct password");
 		req.session.authenticated = true;
-		req.session.username = username;
+		req.session.email = email;
+		req.session.username = result[0].username;
         req.session.user_type = result[0].user_type;
 		req.session.cookie.maxAge = expireTime;
 
-		res.redirect('/loggedIn');
+		res.redirect("/");
 		return;
 	}
 	else {
 		console.log("incorrect password");
-		res.redirect("/login");
+		res.render("errorMessage", {error: "Invalid email/password combination."});
 		return;
 	}
 });
 
-app.use('/loggedin', sessionValidation);
-app.get('/loggedin', (req,res) => {
-    if (!req.session.authenticated) {
-        res.redirect('/login');
-    }
-    res.render("loggedin");
+app.get('/loggedin', sessionValidation, async (req, res) => {
+	res.render("loggedin", {username: req.session.username});
 });
+// app.get('/loggedin', (req,res) => {
+//     if (!req.session.authenticated) {
+//         res.redirect('/login');
+//     }
+//     res.render("loggedin", {username: `${req.session.username}`});
+// });
 
-app.get('/loggedin/info', (req,res) => {
-    res.render("loggedin-info");
-});
 
 app.get('/logout', (req,res) => {
 	req.session.destroy();
-    res.render("loggedout");
+    res.redirect("/");
 });
 
 
@@ -219,12 +223,34 @@ app.get('/cat/:id', (req,res) => {
     res.render("cat", {cat: cat});
 });
 
+app.get('/members', (req, res) => {
+    if (!req.session.authenticated) {
+        res.redirect("/login");
+	}
+	res.render("members");
+});
+
 
 app.get('/admin', sessionValidation, adminAuthorization, async (req,res) => {
-    const result = await userCollection.find().project({username: 1, _id: 1}).toArray();
- 
+    const result = await userCollection.find().project({username: 1, user_type: 1, _id: 1}).toArray();
     res.render("admin", {users: result});
 });
+
+app.post("/promoteUser", async (req, res) => { 
+	const username = req.body.username;
+	console.log(username);
+	await userCollection.findOneAndUpdate({username: username}, {$set: {user_type: "admin"}});
+	console.log("Updated user");
+	res.redirect("/admin");
+})
+
+app.post("/demoteUser", async (req, res) => { 
+	const username = req.body.username;
+	console.log(username);
+	await userCollection.findOneAndUpdate({username: username}, {$set: {user_type: "user"}});
+	console.log("Updated user");
+	res.redirect("/admin");
+})
 
 app.use(express.static(__dirname + "/public"));
 
