@@ -77,7 +77,7 @@ function isAdmin(req) {
 function adminAuthorization(req, res, next) {
     if (!isAdmin(req)) {
         res.status(403);
-        res.render("errorMessage", {error: "Not authorized"});
+        res.render("errorMessage", {error: "403 - Not authorized"});
         return;
     }
     else {
@@ -157,9 +157,10 @@ app.post('/submitUser', async (req,res) => {
 	
 	await userCollection.insertOne({username: username, email: email, password: hashedPassword, user_type: "user"});
 	console.log("Inserted user");
-
-    var html = "successfully created user";
-    res.render("submitUser", {html: html});
+	req.session.username = username;
+	req.session.authenticated = true;
+	req.session.cookie.maxAge = expireTime;
+	res.redirect("/members");
 });
 
 app.post('/loggingin', async (req,res) => {

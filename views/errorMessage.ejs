@@ -5,6 +5,8 @@
   <%if (error =="Invalid email/password combination."){
   %>
   <a href="/login">Try again</a>
+  <% } else if (error == "403 - Not authorized") { %>
+  <div></div>
   <% } else { %>
   <a href="/createUser">Try again</a>
   <% } %>
