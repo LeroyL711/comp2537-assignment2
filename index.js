@@ -238,7 +238,6 @@ app.get('/admin', sessionValidation, adminAuthorization, async (req,res) => {
 
 app.post("/promoteUser", async (req, res) => { 
 	const username = req.body.username;
-	console.log(username);
 	await userCollection.findOneAndUpdate({username: username}, {$set: {user_type: "admin"}});
 	console.log("Updated user");
 	res.redirect("/admin");
@@ -246,7 +245,6 @@ app.post("/promoteUser", async (req, res) => {
 
 app.post("/demoteUser", async (req, res) => { 
 	const username = req.body.username;
-	console.log(username);
 	await userCollection.findOneAndUpdate({username: username}, {$set: {user_type: "user"}});
 	console.log("Updated user");
 	res.redirect("/admin");
